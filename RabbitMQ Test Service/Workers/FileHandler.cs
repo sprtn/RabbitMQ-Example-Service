@@ -31,7 +31,8 @@ namespace RabbitMQ_Test_Service
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                if (DateTime.Now.Minute % 1 == 0 && DateTime.Now.Second == 0)
+                    _logger.LogInformation("FileHandler running at: {time}", DateTimeOffset.Now);
                 
                 try
                 {

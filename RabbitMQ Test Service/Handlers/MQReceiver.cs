@@ -31,7 +31,10 @@ namespace RabbitMQTestProgram.Handlers
                                  autoDelete: false,
                                  arguments: null);
 
-            if (channel.IsClosed) return;
+            if (channel.IsClosed) 
+            {
+                Console.WriteLine("WARNING: Unable to contact host queue");
+            };
 
             var consumer = new EventingBasicConsumer(channel);
             consumer.Received += (model, ea) =>
@@ -40,9 +43,7 @@ namespace RabbitMQTestProgram.Handlers
                 FileService.WriteToIncomming(body);
             };
 
-            channel.BasicConsume(queue: rabbitQueue,
-                                 autoAck: true,
-                                 consumer: consumer);
+            channel.BasicConsume(rabbitQueue, true, consumer);
         }
     }
 }

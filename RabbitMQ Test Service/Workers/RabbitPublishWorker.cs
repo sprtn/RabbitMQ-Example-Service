@@ -30,7 +30,10 @@ namespace RabbitMQ_Test_Service
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
-            {   
+            {
+                if (DateTime.Now.Minute % 1 == 0 && DateTime.Now.Second == 0 && DateTime.Now.Millisecond < 15)
+                    _logger.LogInformation("Publisher running at: {time}", DateTimeOffset.Now);
+
                 try
                 {
                     Publisher.Publish(QueueName);
@@ -40,7 +43,7 @@ namespace RabbitMQ_Test_Service
                     _logger.LogError(e, "No can has read");
                 }
 
-                await Task.Delay(1000, stoppingToken);
+                await Task.Delay(15, stoppingToken);
             }
         }
     }

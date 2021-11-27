@@ -30,6 +30,9 @@ namespace RabbitMQ_Test_Service
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                if (DateTime.Now.Minute % 1 == 0 && DateTime.Now.Second == 0 && DateTime.Now.Millisecond < 100)
+                    _logger.LogInformation("Reader running at: {time}", DateTimeOffset.Now);
+
                 try
                 {
                     Receiver.Receive(QueueName);
