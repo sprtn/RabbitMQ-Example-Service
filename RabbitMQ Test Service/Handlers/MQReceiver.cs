@@ -13,37 +13,32 @@ namespace RabbitMQTestProgram.Handlers
     {
         private readonly ConnectionFactory Factory;
         private readonly FileService FileService;
+        private readonly string QueueName;
 
         public MQReceiver(IConfiguration configuration)
         {
             Factory = new ConnectionFactory() { HostName = configuration["RabbitQueue"] };
             FileService = new FileService(configuration);
+            QueueName = configuration["QueueName"];
         }
 
-        public void Receive(string rabbitQueue)
+        public void Receive()
         {
-            using IConnection connection = Factory.CreateConnection();
-            using IModel channel = connection.CreateModel();
-
-            channel.QueueDeclare(queue: rabbitQueue,
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-
-            if (channel.IsClosed) 
+            using (IConnection connection = Factory.CreateConnection())
             {
-                Console.WriteLine("WARNING: Unable to contact host queue");
-            };
+                using IModel channel = connection.CreateModel();
 
-            var consumer = new EventingBasicConsumer(channel);
-            consumer.Received += (model, ea) =>
-            {
-                var body = ea.Body.ToArray();
-                FileService.WriteToIncomming(body);
-            };
+                channel.QueueDeclare(queue: QueueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
 
-            channel.BasicConsume(rabbitQueue, true, consumer);
+                var consumer = new EventingBasicConsumer(channel);
+                consumer.Received += (model, ea) =>
+                {
+                    var body = ea.Body.ToArray();
+                    FileService.WriteToIncomming(body);
+                };
+
+                channel.BasicConsume(QueueName, true, consumer);
+            }
         }
     }
 }

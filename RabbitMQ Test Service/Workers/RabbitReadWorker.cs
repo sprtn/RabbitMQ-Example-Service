@@ -12,12 +12,10 @@ namespace RabbitMQ_Test_Service
     public class RabbitReadWorker : BackgroundService
     {
         private readonly ILogger<RabbitPublishWorker> _logger;
-        private readonly string QueueName = "SimpleMessage";
         private readonly MQReceiver Receiver;
 
         public RabbitReadWorker(ILogger<RabbitPublishWorker> logger)
         {
-            _logger = logger;
             _logger = logger;
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
@@ -35,7 +33,7 @@ namespace RabbitMQ_Test_Service
 
                 try
                 {
-                    Receiver.Receive(QueueName);
+                    Receiver.Receive();
                 }
                 catch(Exception e)
                 {

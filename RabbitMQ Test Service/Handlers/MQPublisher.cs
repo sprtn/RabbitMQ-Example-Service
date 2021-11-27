@@ -5,6 +5,7 @@ using RabbitMQ.Client;
 using RabbitMQ_Test_Service;
 using RabbitMQ_Test_Service.Models;
 using System;
+using System.Diagnostics;
 using System.Text;
 
 
@@ -14,10 +15,11 @@ namespace RabbitMQTestProgram.Handlers
     {
         private readonly ConnectionFactory Factory;
         private readonly FileService FileService;
+        private readonly string QueueName;
 
         private readonly int MaxRetries;
         private readonly int FilesToCreate;
-        private int cnt;
+        private int curCnt;
 
         public MQPublisher(IConfigurationRoot configuration)
         {
@@ -27,14 +29,15 @@ namespace RabbitMQTestProgram.Handlers
                 FilesToCreate = 100;
             if (!int.TryParse(configuration["MaxRetries"], out MaxRetries))
                 MaxRetries = 1;
+            QueueName = configuration["QueueName"];
         }
 
-        internal void Publish(string queue, SimpleMessage outgoingMsg = null, int retryNo = 0)
+        internal void Publish(SimpleMessage outgoingMsg = null, int retryNo = 0)
         {
             // Only create so many dummy files
-            if (outgoingMsg == null && cnt > FilesToCreate) return;
+            if (outgoingMsg == null && curCnt > FilesToCreate) return;
             // Alter body to track counter
-            if (outgoingMsg != null) outgoingMsg.Body = $"Even morem ipsum sin dolor amet:  {cnt++}";
+            if (outgoingMsg != null) outgoingMsg.Body = $"Even morem ipsum sin dolor amet:  {curCnt++}";
             // Dont get hard loops of messages
             if (retryNo > MaxRetries) FileService.SaveToError(outgoingMsg);
 
@@ -45,13 +48,13 @@ namespace RabbitMQTestProgram.Handlers
                 {
                     using var channel = connection.CreateModel();
                     var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(outgoingMsg));
-                    channel.BasicPublish("", queue, null, body);
+                    if (channel.IsOpen) channel.BasicPublish("", routingKey: QueueName, null, body);
                 };
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Could not publish to MQ: {e.Message}");
-                Publish(queue, outgoingMsg, retryNo++);
+                Publish(outgoingMsg, retryNo++);
             }
         }
 
@@ -59,7 +62,7 @@ namespace RabbitMQTestProgram.Handlers
         {
             return new SimpleMessage()
             {
-                Body = $"Lorem ipsum sin dolor amet: {cnt++}",
+                Body = $"Lorem ipsum sin dolor amet: {curCnt++}",
                 Sender = "Vegard Pihl Bratteng"
             };
         }

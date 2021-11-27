@@ -15,7 +15,6 @@ namespace RabbitMQ_Test_Service
     public class FileHandler : BackgroundService
     {
         private readonly ILogger<FileHandler> _logger;
-        private readonly string QueueName = "SimpleMessage";
         private readonly MQPublisher Publisher;
         private readonly FileService FileService;
 
@@ -40,7 +39,7 @@ namespace RabbitMQ_Test_Service
                     foreach (var simpMsg in simpMsgList)
                     {
                         simpMsg.Sender = "ReSender";
-                        Publisher.Publish(QueueName, simpMsg);
+                        Publisher.Publish(simpMsg);
                     }
                 }
                 catch(Exception e)

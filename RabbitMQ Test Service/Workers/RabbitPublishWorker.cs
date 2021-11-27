@@ -15,7 +15,6 @@ namespace RabbitMQ_Test_Service
     {
         private readonly ILogger<RabbitPublishWorker> _logger;
         private readonly MQPublisher Publisher;
-        private readonly string QueueName = "SimpleMessage";
 
         public RabbitPublishWorker(ILogger<RabbitPublishWorker> logger)
         {
@@ -31,19 +30,19 @@ namespace RabbitMQ_Test_Service
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                if (DateTime.Now.Minute % 1 == 0 && DateTime.Now.Second == 0 && DateTime.Now.Millisecond < 15)
+                if (DateTime.Now.Minute % 1 == 0 && DateTime.Now.Second == 0 && DateTime.Now.Millisecond < 100)
                     _logger.LogInformation("Publisher running at: {time}", DateTimeOffset.Now);
 
                 try
                 {
-                    Publisher.Publish(QueueName);
+                    Publisher.Publish();
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "No can has read");
                 }
 
-                await Task.Delay(15, stoppingToken);
+                await Task.Delay(100, stoppingToken);
             }
         }
     }
