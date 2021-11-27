@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ_Test_Service;
@@ -11,19 +12,17 @@ namespace RabbitMQTestProgram.Handlers
 {
     public class MQPublisher
     {
-        ConnectionFactory factory;
-        string rabbitQueue;
-        int cnt = 0;
-        FileService FileService;
+        private readonly ConnectionFactory Factory;
+        private readonly FileService FileService;
+        private int cnt;
 
-        public MQPublisher(string hostName)
+        public MQPublisher(IConfigurationRoot configuration)
         {
-            rabbitQueue = hostName;
-            factory = new ConnectionFactory() { HostName = rabbitQueue };
-            FileService = new FileService("F:\\RabbitMQ\\test\\");
+            Factory = new ConnectionFactory() { HostName = configuration["RabbitQueue"] };
+            FileService = new FileService(configuration);
         }
 
-        internal void Publish(string queueName, SimpleMessage msg = null, int retries = 0)
+        internal void Publish(string queue, SimpleMessage msg = null, int retries = 0)
         {
             if (msg == null && cnt > 100)
                 return;
@@ -32,36 +31,31 @@ namespace RabbitMQTestProgram.Handlers
                 msg.Body = $"this is another test {cnt++}";
 
             if (retries > 2)
-                FileService.LocalStorage(msg);
+                FileService.SaveToError(msg);
 
             try
             {
-                msg ??= CreateRandomMessage();
-                using (var connection = factory.CreateConnection())
+                msg ??= CreateSimpleMessageExample();
+                using (var connection = Factory.CreateConnection())
                 {
                     using (var channel = connection.CreateModel())
                     {
                         var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(msg));
-                        channel.BasicPublish(
-                            exchange: "",
-                            routingKey: queueName,
-                            basicProperties: null,
-                            body: body);
+                        channel.BasicPublish("", queue, null, body);
                     }
                 };
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Could not publish to MQ: {e.Message}");
-                Publish(queueName, msg, retries++);
+                Publish(queue, msg, retries++);
             }
         }
 
-        private SimpleMessage CreateRandomMessage()
+        private SimpleMessage CreateSimpleMessageExample()
         {
             return new SimpleMessage()
             {
-                Header = "Simple Message Format",
                 Body = $"this is a test {cnt++}",
                 Sender = "Vegard"
             };

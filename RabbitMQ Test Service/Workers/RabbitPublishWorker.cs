@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQTestProgram.Handlers;
@@ -13,31 +14,30 @@ namespace RabbitMQ_Test_Service
     public class RabbitPublishWorker : BackgroundService
     {
         private readonly ILogger<RabbitPublishWorker> _logger;
-        private string rabbitHost;
-        private MQPublisher Publisher;
+        private readonly MQPublisher Publisher;
         private readonly string QueueName = "SimpleMessage";
 
         public RabbitPublishWorker(ILogger<RabbitPublishWorker> logger)
         {
             _logger = logger;
-            rabbitHost = ConfigurationManager.AppSettings["RabbitQueue"];
-            rabbitHost ??= "localhost";
-            Publisher = new MQPublisher(rabbitHost);
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            Publisher = new MQPublisher(configuration);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
-            {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                
+            {   
                 try
                 {
                     Publisher.Publish(QueueName);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("No can has read");
+                    _logger.LogError(e, "No can has read");
                 }
 
                 await Task.Delay(1000, stoppingToken);

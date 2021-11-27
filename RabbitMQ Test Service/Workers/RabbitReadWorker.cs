@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQTestProgram.Handlers;
@@ -11,24 +12,24 @@ namespace RabbitMQ_Test_Service
     public class RabbitReadWorker : BackgroundService
     {
         private readonly ILogger<RabbitPublishWorker> _logger;
-        private readonly MQReceiver Receiver;
         private readonly string QueueName = "SimpleMessage";
-        private readonly string RabbitHost;
+        private readonly MQReceiver Receiver;
 
         public RabbitReadWorker(ILogger<RabbitPublishWorker> logger)
         {
             _logger = logger;
-            RabbitHost = ConfigurationManager.AppSettings["RabbitQueue"];
-            RabbitHost ??= "localhost";
-            Receiver = new MQReceiver(RabbitHost);
+            _logger = logger;
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            Receiver = new MQReceiver(configuration);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Reader Worker running at: {time}", DateTimeOffset.Now);
-                
                 try
                 {
                     Receiver.Receive(QueueName);

@@ -1,5 +1,7 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Configuration;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ_Test_Service;
 using RabbitMQ_Test_Service.Models;
 using System;
 using System.IO;
@@ -9,42 +11,38 @@ namespace RabbitMQTestProgram.Handlers
 {
     public class MQReceiver
     {
-        ConnectionFactory factory;
-        private string rabbitHost;
+        private readonly ConnectionFactory Factory;
+        private readonly FileService FileService;
 
-        public MQReceiver(string hostName)
+        public MQReceiver(IConfiguration configuration)
         {
-            rabbitHost = hostName;
-            factory = new ConnectionFactory() { HostName = rabbitHost };
+            Factory = new ConnectionFactory() { HostName = configuration["RabbitQueue"] };
+            FileService = new FileService(configuration);
         }
 
         public void Receive(string rabbitQueue)
         {
-            using (var connection = factory.CreateConnection())
+            using IConnection connection = Factory.CreateConnection();
+            using IModel channel = connection.CreateModel();
+
+            channel.QueueDeclare(queue: rabbitQueue,
+                                 durable: false,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null);
+
+            if (channel.IsClosed) return;
+
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) =>
             {
-                using (var channel = connection.CreateModel())
-                {
-                    channel.QueueDeclare(queue: rabbitQueue,
-                                         durable: false,
-                                         exclusive: false,
-                                         autoDelete: false,
-                                         arguments: null);
+                var body = ea.Body.ToArray();
+                FileService.WriteToIncomming(body);
+            };
 
-                    var consumer = new EventingBasicConsumer(channel);
-                    consumer.Received += (model, ea) =>
-                    {
-                        var body = ea.Body.ToArray();
-                        SimpleMessage msg = Newtonsoft.Json.JsonConvert.DeserializeObject<SimpleMessage>(Encoding.UTF8.GetString(body));
-                        Console.WriteLine(" [x] Received {0}", msg);
-
-                        File.WriteAllBytes("F:\\RabbitMQ\\test\\incomming\\Received-" + DateTime.Now.Ticks.ToString() + ".simpjson", body);
-                    };
-
-                    channel.BasicConsume(queue: rabbitQueue,
-                                         autoAck: true,
-                                         consumer: consumer);
-                }
-            }            
+            channel.BasicConsume(queue: rabbitQueue,
+                                 autoAck: true,
+                                 consumer: consumer);
         }
     }
 }

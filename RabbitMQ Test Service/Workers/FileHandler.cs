@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ_Test_Service.Models;
@@ -15,17 +16,15 @@ namespace RabbitMQ_Test_Service
     {
         private readonly ILogger<FileHandler> _logger;
         private readonly string QueueName = "SimpleMessage";
-        private readonly string RabbitHost;
         private readonly MQPublisher Publisher;
         private readonly FileService FileService;
 
         public FileHandler(ILogger<FileHandler> logger)
         {
+            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            Publisher = new MQPublisher(configuration);
+            FileService = new FileService(configuration);
             _logger = logger;
-            RabbitHost = ConfigurationManager.AppSettings["RabbitQueue"];
-            RabbitHost ??= "localhost";
-            Publisher = new MQPublisher(RabbitHost);
-            FileService = new FileService("F:\\RabbitMQ\\test\\");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,7 +44,7 @@ namespace RabbitMQ_Test_Service
                 }
                 catch(Exception e)
                 {
-                    _logger.LogError($"No can has read: {e.Message}");
+                    _logger.LogError($"Unable to redistribute messages: {e.Message}");
                 }
 
                 await Task.Delay(500, stoppingToken);
