@@ -18,7 +18,7 @@ namespace RabbitMQTestProgram.Handlers
         private readonly string QueueName;
 
         private readonly int MaxRetries;
-        private readonly int FilesToCreate;
+        private int FilesToCreate;
         private int curCnt;
 
         public MQPublisher(IConfigurationRoot configuration)
@@ -34,12 +34,20 @@ namespace RabbitMQTestProgram.Handlers
 
         internal void Publish(SimpleMessage outgoingMsg = null, int retryNo = 0)
         {
-            // Only create so many dummy files
-            if (outgoingMsg == null && curCnt > FilesToCreate) return;
+            // Only create so many files
+            if (outgoingMsg == null)
+            {
+                if (FilesToCreate > 0)
+                    FilesToCreate--;
+                else
+                    return;
+            }
+
             // Alter body to track counter
             if (outgoingMsg != null) outgoingMsg.Body = $"Even morem ipsum sin dolor amet:  {curCnt++}";
             // Dont get hard loops of messages
-            if (retryNo > MaxRetries) FileService.SaveToError(outgoingMsg);
+            if (retryNo > MaxRetries) 
+                FileService.SaveToError(outgoingMsg);
 
             try
             {
