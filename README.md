@@ -3,8 +3,9 @@ Creates nonsense "messages" and send them in a silly loop, for science.
 
 ## Project consists of three workers:
 ### FileHandler
-Worker task. Uses the <b>FileService.cs</b> ScrapeIncommingSimpleMessages function to scrape the incoming folder for SimpleMessage files. </br>
-Publishes findings back onto the Queue. Method stores a physical copy in the processed-folder, alters the body of the message slightly and gives it a new number and sender.</br>
+Runs FileService.ScrapeIncommingSimpleMessages every 500ms </br>
+Reads .simp-objects from the incomming folder, publishes serialized SimpleMessage objects as byte[] back onto the queue </br>
+Method stores a physical copy in the processed-folder, alters the body of the message slightly and gives it a new number and sender.</br>
 </br>
 ### RabbitPublishWorker
 Runs MQPublisher.Publish every 100ms.</br>
