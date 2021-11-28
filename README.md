@@ -3,7 +3,7 @@ Creates nonsense "messages" and send them in a silly loop, for science.
 
 ## Project consists of three workers:
 ### FileHandler
-Worker task.Uses the <b>FileService.cs</b> ScrapeIncommingSimpleMessages funciton to scrape the incoming folder for SimpleMessage files. 
+Worker task. Uses the <b>FileService.cs</b> ScrapeIncommingSimpleMessages funciton to scrape the incoming folder for SimpleMessage files. 
 Publishes findings back onto the Queue. Method stores a physical copy in the processed-folder, alters the body of the message slightly and gives it a new number and sender.
 
 ### RabbitPublishWorker
