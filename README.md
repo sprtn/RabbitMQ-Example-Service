@@ -4,7 +4,7 @@ Creates nonsense "messages" and send them in a silly loop, for science.
 ## Project consists of three workers:
 ### FileHandler
 Runs FileService.ScrapeIncommingSimpleMessages every 500ms </br>
-Reads .simp-objects from the incomming folder, publishes SimpleMessages back onto the queue </br>
+Reads .simp-objects from the incomming folder, publishes serialized SimpleMessage objects as byte[] back onto the queue </br>
 Method stores a physical copy in the processed-folder, alters the body of the message slightly and gives it a new number and sender.</br>
 </br>
 ### RabbitPublishWorker
